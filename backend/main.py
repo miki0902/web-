@@ -1,116 +1,45 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import HTTPException
+from models import Post, NewPost
+from service import post_service
+from db import init_db
 
-import sqlite3
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-class NewPost(BaseModel):
-    title: str
-    body: str
-    userId: int
-
-class Post(NewPost):
-    id: int 
-
-def init_db():
-    conn = sqlite3.connect("posts.db")# SQLite のDBにpost.dbを作成
-    cursor = conn.cursor()# DBの操作を行うためのカーソルを作成
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS posts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            body TEXT NOT NULL,
-            userId INTEGER NOT NULL
-        )
-    """)
-    conn.commit()# DBを保存する
-    conn.close()# DBを閉じる
 
 @app.on_event("startup")
 def startup():
     init_db()
 
-@app.get("/posts")
+@app.get("/posts", response_model=list[Post])
 def get_posts():
-    conn = sqlite3.connect("posts.db")# SQLite のDBにpost.dbに接続
-    cursor = conn.cursor()# DBの操作を行うためのカーソルを作成
-    cursor.execute("SELECT id, title, body, userId FROM posts") # postsテーブルからid, title, body, userIdを取得
-    rows = cursor.fetchall() # 取得したデータをrowsに格納
+    return post_service.get_posts()
 
-    conn.close()# DBを閉じる
-    return [
-        Post(id=row[0], title=row[1], body=row[2], userId=row[3]) # Postオブジェクトを作成
-        for row in rows # rowsの各要素をPostオブジェクトに変換
-    ]
-
-@app.post("/posts")
+@app.post("/posts", response_model=Post)
 def create_post(new_post: NewPost):
-    conn = sqlite3.connect("posts.db")# SQLite のDBにpost.dbに接続
-    cursor = conn.cursor()# DBの操作を行うためのカーソルを作成
+    return post_service.create_post(new_post)
 
-    cursor.execute(
-        "INSERT INTO posts (title, body, userId) VALUES (?, ?, ?)",
-        (new_post.title, new_post.body, new_post.userId)
-    )# postsテーブルにtitle, body, userIdをINSERT
-
-    post_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-
-    return Post(
-        id=post_id,
-        title=new_post.title,
-        body=new_post.body,
-        userId=new_post.userId
-    )
-
-@app.put("/posts/{post_id}")
+@app.put("/posts/{post_id}", response_model=Post)
 def update_post(post_id: int, new_post: NewPost):
-    conn = sqlite3.connect("posts.db")# SQLite のDBにpost.dbに接続
-    cursor = conn.cursor()# DBの操作を行うためのカーソルを作成
-
-    cursor.execute(
-        "UPDATE posts SET title = ?, body = ?, userId = ? WHERE id = ?",
-        (new_post.title, new_post.body, new_post.userId, post_id)
-    )# postsテーブルのidがpost_idの行をUPDATE
-
-    if cursor.rowcount == 0:
-        conn.close()
+    try:
+        return post_service.update_post(post_id, new_post)
+    except ValueError:
         raise HTTPException(status_code=404, detail="Post not found")
-
-    conn.commit()
-    conn.close()
-
-    return Post(
-        id=post_id,
-        title=new_post.title,
-        body=new_post.body,
-        userId=new_post.userId
-    )
 
 @app.delete("/posts/{post_id}")
 def delete_post(post_id: int):
-    conn = sqlite3.connect("posts.db")
-    cursor = conn.cursor()
-
-    cursor.execute("DELETE FROM posts WHERE id = ?", (post_id,))
-
-    if cursor.rowcount == 0:
-        conn.close()
+    try:
+        post_service.delete_post(post_id)
+        return {"message": "Post deleted successfully"}
+    except ValueError:
         raise HTTPException(status_code=404, detail="Post not found")
 
-    conn.commit()
-    conn.close()
 
-    return {"message": "Post deleted"}
