@@ -10,9 +10,10 @@ export default function PostList({ posts, onDelete, onEdit }: Props) {
     return (
         <>
             {posts.map((post) => (
-                <div key={post.id}>
+                <div key={post.id} className="post-card">
                     <h3>{post.title}</h3>
                     <p>{post.body}</p>
+                    <div className="post-actions">
                     <button onClick={() => onDelete(post.id)}>Delete</button>
                     <button onClick={() => {
                         const title = prompt("New Title", post.title);
@@ -24,6 +25,7 @@ export default function PostList({ posts, onDelete, onEdit }: Props) {
                 >
                     Edit
                     </button>
+                </div>
                 </div>
             ))}
         </>

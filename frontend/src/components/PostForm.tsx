@@ -16,7 +16,7 @@ export default function PostForm({ onSubmit }: Props) {
     };
 
     return (
-        <>
+        <div className="post-form">
             <h2>Create New Post</h2>
             <input
                 placeholder="Title"
@@ -31,6 +31,6 @@ export default function PostForm({ onSubmit }: Props) {
             />
             <br />
             <button onClick={handleSubmit}>Post</button>
-        </>
+        </div>
     );
 }

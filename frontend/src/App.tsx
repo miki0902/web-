@@ -1,5 +1,6 @@
 
 import {useState, useEffect} from "react"
+import "./App.css";
 import type { Post, NewPost } from "./types/post";
 import { fetchPosts, createPost, updatePost, deletePost } from "./api/posts";
 import PostForm from "./components/PostForm";
