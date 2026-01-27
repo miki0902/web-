@@ -1,57 +1,37 @@
-from typing import List, Optional
-from models import Post, NewPost
-from db import get_connection
+from sqlalchemy.orm import Session
+from models.post import Post
+from schemas.post import NewPost
 
-def fetch_all() -> List[Post]:
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, title, body, userId FROM posts")
-    rows = cursor.fetchall()
-    conn.close()
+def fetch_all(db: Session):
+    return db.query(Post).all()
 
-    return [
-        Post(id=row[0], title=row[1], body=row[2], userId=row[3])
-        for row in rows
-    ]
-
-def create(new_post: NewPost) -> Post:
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "INSERT INTO posts (title, body, userId) VALUES (?, ?, ?)",
-        (new_post.title, new_post.body, new_post.userId)
+def create(db: Session, new_post: NewPost):
+    post = Post(
+        title=new_post.title,
+        body=new_post.body,
+        userId=new_post.userId,
     )
-    post_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
+    db.add(post)
+    db.commit()
+    db.refresh(post)
 
-    return Post(id=post_id, **new_post.dict())
+    return post
 
-def update(post_id: int, new_post: NewPost) -> Optional[Post]:
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "UPDATE posts SET title = ?, body = ?, userId = ? WHERE id = ?",
-        (new_post.title, new_post.body, new_post.userId, post_id),
-    )
-
-    if cursor.rowcount == 0:
-        conn.close()
+def update(db: Session, post_id: int, new_post: NewPost):
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if not post:
         return None
+    post.title = new_post.title
+    post.body = new_post.body
+    post.userId = new_post.userId
+    db.commit()
+    db.refresh(post)
+    return post
 
-    conn.commit()
-    conn.close()
-    return Post(id=post_id, **new_post.dict())
-
-def delete(post_id: int) -> bool:
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("DELETE FROM posts WHERE id = ?", (post_id,))
-    deleted = cursor.rowcount > 0 # 削除された行数が1行以上あればTrue
-    conn.commit()
-    conn.close()
-    return deleted
-
+def delete(db: Session, post_id: int):
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if not post:
+        return False
+    db.delete(post)
+    db.commit()
+    return True
