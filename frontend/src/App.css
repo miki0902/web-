@@ -35,25 +35,4 @@ h2 {
   resize: vertical;
 }
 
-.post-card {
-  border: 1px solid #ffffff;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  background-color: #000000;
-}
 
-.post-card h3 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-}
-
-.post-card p {
-  margin: 0.25rem 0;
-}
-
-.post-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}

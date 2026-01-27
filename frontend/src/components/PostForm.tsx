@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { NewPost } from "../types/post";
+import { Button, TextField, Stack, Typography } from "@mui/material";
 
 type Props = {
     onSubmit: (newPost: NewPost) => void;
@@ -10,27 +11,37 @@ export default function PostForm({ onSubmit }: Props) {
     const [body, setBody] = useState("");
 
     const handleSubmit = () => {
+        if (!title || !body) return;
         onSubmit({ title, body, userId: 1 });
         setTitle("");
         setBody("");
     };
 
     return (
-        <div className="post-form">
-            <h2>Create New Post</h2>
-            <input
-                placeholder="Title"
+        <Stack 
+            spacing={2}
+            sx={{ 
+                backgroundColor: "background.paper",
+                p: 3,
+                borderRadius: 2,
+            }}
+        >
+            <Typography variant="h5">Create New Post</Typography>
+            <TextField
+                label="Title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
             />
-            <br />
-            <textarea
-                placeholder="Body"
-                value={body}
+            <TextField
+                label="Body"
+                multiline
+                minRows={3}
+                value = {body}
                 onChange={(e) => setBody(e.target.value)}
             />
-            <br />
-            <button onClick={handleSubmit}>Post</button>
-        </div>
+
+            <Button variant="contained" onClick={handleSubmit}>Post</Button>
+        </Stack>
+        
     );
 }
