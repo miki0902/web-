@@ -1,19 +1,16 @@
 import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "sqlite:///./dev.db" #ローカル用のデータベースURL
-)
 
-print("DATABASE_URL: ", DATABASE_URL)
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False}  if DATABASE_URL.startswith("sqlite://") else {}
-)
+if DATABASE_URL is None:
+    raise RuntimeError("DATABASE_URL is not set")
+
+engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
-
